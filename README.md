@@ -11,6 +11,14 @@ Final project for NNAA: a sequence-to-sequence speech-to-text translation model 
 - `tests/`: Unit tests for model components
 
 ## Requirements
+To set up the conda environment, run:
+
+```bash
+conda env create -f environment.yml
+```
+```bash
+conda activate stt_translation
+```
 
 
 
