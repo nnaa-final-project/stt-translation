@@ -19,6 +19,9 @@ conda env create -f environment.yml
 ```bash
 conda activate stt_translation
 ```
+```bash 
+pip install -r requirements.txt
+```
 
 
 

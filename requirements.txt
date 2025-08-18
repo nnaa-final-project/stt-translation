@@ -4,6 +4,7 @@ ipython
 matplotlib
 comet_ml
 pandas
+torchcodec
 
 # Hugging Face
 transformers
