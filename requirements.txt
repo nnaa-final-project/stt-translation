@@ -5,6 +5,7 @@ matplotlib
 comet_ml
 pandas
 torchcodec
+ffmpeg
 
 # Hugging Face
 transformers
