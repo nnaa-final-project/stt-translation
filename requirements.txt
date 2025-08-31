@@ -1,0 +1,27 @@
+# Core Dependencies
+numpy
+ipython
+matplotlib
+comet_ml
+pandas
+torchcodec
+
+# Hugging Face
+transformers
+datasets
+accelerate
+tokenizers
+huggingface_hub
+
+# General utilities
+tqdm # For progress bars during training
+scikit-learn # For evaluation metrics
+
+
+# Additional tools
+sentencepiece # Used by some tokenizers
+bitsandbytes # For 8-bit quantization to run larger models
+
+
+
+
