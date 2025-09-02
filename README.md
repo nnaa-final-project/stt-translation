@@ -53,7 +53,7 @@ python scripts/predict.py    # Inference on new inputs
 
 We follow a simplified Git workflow for team collaboration:
 
-- `main`: Stable release branch. Only the team lead merges into this branch.
+- `main`: Stable release branch. Only the team lead merges into this branch. Use dev for pull requests.
 - `dev`: Integration branch for collaborative work.
 - `feature/<name-task>`: Individual branches for each team member’s task.
 
