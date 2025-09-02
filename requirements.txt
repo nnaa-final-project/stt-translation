@@ -4,11 +4,12 @@ ipython
 matplotlib
 comet_ml
 pandas
-torchcodec
+# torchcodec -> not needed when using libsndfile
+ffmpeg
 
 # Hugging Face
 transformers
-datasets
+datasets==2.16.1 # Specific version for compatibility, after this version there is a breaking change that does not work well with conda
 accelerate
 tokenizers
 huggingface_hub
