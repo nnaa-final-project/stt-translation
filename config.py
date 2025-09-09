@@ -3,7 +3,7 @@ from pathlib import Path
 import torch
 
 # --- Paths Configuration (USER MUST SET THESE) ---
-COMMON_VOICE_BASE_DATA_DIR = Path("../datasets/common_voice/common_voice_4/data")
+COMMON_VOICE_BASE_DATA_DIR = Path("set env variable")
 COVOST_TSV_PATH = COMMON_VOICE_BASE_DATA_DIR / "covost_v2.en_de.tsv"
 OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR # / "processed_output", using base dir because output of offline preprocessor is saved there
 FEATURES_DIR = OUTPUT_DIR / "features"
