@@ -3,16 +3,13 @@ from pathlib import Path
 import torch
 
 # --- Paths Configuration (USER MUST SET THESE) ---
-# Base directory where raw Common Voice and CoVoST data is located.
-BASE_DATA_DIR = Path("../datasets/common_voice/common_voice_4/data")
-# Path to the CoVoST v2 EN-DE TSV file.
-COVOST_TSV_PATH = BASE_DATA_DIR / "covost_v2.en_de.tsv"
-# Main directory where all processed data and model outputs will be saved.
-OUTPUT_DIR = BASE_DATA_DIR # / "processed_output"
+COMMON_VOICE_BASE_DATA_DIR = Path("../datasets/common_voice/common_voice_4/data")
+COVOST_TSV_PATH = COMMON_VOICE_BASE_DATA_DIR / "covost_v2.en_de.tsv"
+OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR # / "processed_output", using base dir because output of offline preprocessor is saved there
 FEATURES_DIR = OUTPUT_DIR / "features"
 
 
-# --- Parameters from data_processor.py ---
+# --- Parameters from data_processor.py by sygrace---
 @dataclass
 class AudioParams:
     """Parameters for audio processing."""
@@ -41,7 +38,7 @@ class TextParams:
     min_tok: int = 1
 
 
-# --- From-Scratch Model Architecture Configuration ---
+# --- Model Config ---
 EMBED_DIM = 256
 NUM_HEADS = 8
 NUM_ENCODER_LAYERS = 4
@@ -50,9 +47,9 @@ D_FF = 1024
 DROPOUT = 0.1
 
 
-# --- Training Configuration ---
+# --- Training Config ---
 TRAINING_OUTPUT_DIR = OUTPUT_DIR / "training_results"
-# Detect the best available device for training.
+
 if torch.cuda.is_available():
     DEVICE = "cuda"
 elif torch.backends.mps.is_available():
@@ -60,7 +57,7 @@ elif torch.backends.mps.is_available():
 else:
     DEVICE = "cpu"
 
-# --- Hyperparameters ---
+# --- Sample Hyperparameters (Just initials, not all are used) ---
 BATCH_SIZE = 16
 NUM_TRAIN_EPOCHS = 1
 LEARNING_RATE = 2e-4
