@@ -248,12 +248,12 @@ class AudioProcessor:
         for p in tqdm(dfm["audio_wav"], desc="Extract log-mel feats"):
             F = self._logmel_from_wav(Path(p)) if p and isinstance(p, str) else None
             if F is None:
-                out_paths.append("");
-                shapes.append("");
+                out_paths.append("")
+                shapes.append("")
                 continue
             out_p = self.features_dir / (Path(p).stem + ".npy")
-            np.save(out_p, F);
-            out_paths.append(out_p.as_posix());
+            np.save(out_p, F)
+            out_paths.append(out_p.as_posix())
             shapes.append(f"{F.shape[0]}x{F.shape[1]}")
         dfm["feat_npy"], dfm["feat_shape"] = out_paths, shapes
         # CMVN
@@ -264,8 +264,8 @@ class AudioProcessor:
             sum_feat = F.sum(axis=1) if sum_feat is None else sum_feat + F.sum(axis=1)
             sum_sq = (F ** 2).sum(axis=1) if sum_sq is None else sum_sq + (F ** 2).sum(axis=1)
             count += F.shape[1]
-        mean = (sum_feat / count);
-        var = (sum_sq / count - mean ** 2);
+        mean = (sum_feat / count)
+        var = (sum_sq / count - mean ** 2)
         std = np.sqrt(np.maximum(var, 1e-8))
         cmvn = {"mean": mean.tolist(), "std": std.tolist()}
         with open(self.cmvn_json, "w") as f:
@@ -369,7 +369,7 @@ class TextProcessor:
 
     def encode_splits(self, df_in: Optional[pd.DataFrame] = None) -> Dict[str, Path]:
         if not HAS_SPM:
-            print("[WARN] sentencepiece not installed; skipping encoding")
+            print("[WARN] sentencepiece not installed, skipping encoding")
             return {}
         sp = self._sp()
         df = df_in if df_in is not None else self.load_merge_pairs()
