@@ -1,3 +1,5 @@
+from datetime import time, datetime
+
 from transformers import Trainer, TrainingArguments, AutoConfig
 import evaluate
 import json
@@ -11,7 +13,11 @@ from scripts.data_loader import PreprocessedDataset, PaddingDataCollator
 
 class TrainingManager:
     def __init__(self):
-        self.train_dataset = PreprocessedDataset(split="train", base_output_dir=config.OUTPUT_DIR)
+        self.train_dataset = PreprocessedDataset(
+            split="train",
+            base_output_dir=config.OUTPUT_DIR,
+            subset_params=config.DATASET_PARAMS
+        )
         self.eval_dataset = PreprocessedDataset(split="dev", base_output_dir=config.OUTPUT_DIR)
 
         # Load the preprocessed SentencePiece model
@@ -64,7 +70,7 @@ class TrainingManager:
 
         # Manually save the custom model config
         config.TRAINING_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        with open(config.TRAINING_OUTPUT_DIR / "config.json", "w") as f:
+        with open(config.TRAINING_OUTPUT_DIR / f"config_{datetime.now()}.json", "w") as f:
             json.dump(self.model.config, f)
 
         print("======= Training =======")

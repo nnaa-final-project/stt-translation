@@ -12,7 +12,7 @@ OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR # / "processed_output", using base dir b
 FEATURES_DIR = OUTPUT_DIR / "features"
 
 
-# --- Parameters from data_processor.py by sygrace---
+# --- Parameters from data_processor.py by @sygrace---
 @dataclass
 class AudioParams:
     """Parameters for audio processing."""
@@ -39,6 +39,23 @@ class TextParams:
     max_char_de: int = 1200
     max_len_ratio: float = 3.0
     min_tok: int = 1
+
+
+@dataclass
+class DatasetParams:
+    """Parameters for dataset loading and splitting."""
+    use_subset: bool = True
+    subset_fraction: float = 0.01  # Use 1% of training data
+    subset_size: int = None  # Another way to do it is to specify exact train subset size
+    random_seed: int = 42
+    split_method: str = "random"  # "random", "first_n", or "stratified"
+
+    # split train data into train/val if needed
+    create_val_split: bool = False
+    val_split_ratio: float = 0.1  # 10% for validation
+
+    # For subsets reproducibility
+    shuffle_before_split: bool = True
 
 
 # --- Model Config ---
@@ -76,3 +93,15 @@ SAVE_TOTAL_LIMIT = 2
 LOAD_BEST_MODEL_AT_END = True
 METRIC_FOR_BEST_MODEL = "bleu"
 GREATER_IS_BETTER = True
+
+
+# --- Dataset Config ---
+DATASET_PARAMS = DatasetParams()
+
+# Quick access variables for backward compatibility
+USE_SUBSET = DATASET_PARAMS.use_subset
+SUBSET_FRACTION = DATASET_PARAMS.subset_fraction
+SUBSET_SIZE = DATASET_PARAMS.subset_size
+RANDOM_SEED = DATASET_PARAMS.random_seed
+SLIPT_METHOD = DATASET_PARAMS.split_method
+

@@ -15,7 +15,7 @@ class PreprocessedDataset(Dataset):
     data_processor.py | data_manger.py.
     """
 
-    def __init__(self, split: str, base_output_dir: Path):
+    def __init__(self, split: str, base_output_dir: Path, subset_params=None):
         """
         Args:
             split (str): The dataset split to load ('train', 'dev', or 'test').
@@ -48,6 +48,11 @@ class PreprocessedDataset(Dataset):
             df_features_split, df_encoded, on="audio_path", how="inner"
         ).dropna(subset=['feat_npy', 'tgt_ids'])
 
+        # Use subset of train data if specified (to save time during development)
+        if subset_params and subset_params.use_subset and split == "train":
+            self._apply_subset(subset_params)
+
+
     def __len__(self) -> int:
         return len(self.manifest)
 
@@ -72,6 +77,25 @@ class PreprocessedDataset(Dataset):
             "input_features": torch.from_numpy(features).float(),
             "labels": torch.tensor(target_ids, dtype=torch.long),
         }
+
+    def _apply_subset(self, params):
+        """Apply subsetting to the dataset."""
+        original_size = len(self.manifest)
+
+        if params.subset_size:
+            n_samples = min(params.subset_size, original_size)
+        else:
+            n_samples = int(original_size * params.subset_fraction)
+
+        if params.split_method == "random":
+            self.manifest = self.manifest.sample(n=n_samples, random_state=params.random_seed)
+        elif params.split_method == "first_n":
+            self.manifest = self.manifest.head(n_samples)
+
+        # Reset index
+        self.manifest = self.manifest.reset_index(drop=True)
+
+        print(f"Using subset of training data: {len(self.manifest)} samples out of {original_size}")
 
 
 @dataclass
