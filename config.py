@@ -79,7 +79,7 @@ else:
 
 # --- Sample Hyperparameters (Just initials, not all are used) ---
 BATCH_SIZE = 16
-NUM_TRAIN_EPOCHS = 1
+NUM_TRAIN_EPOCHS = 3
 LEARNING_RATE = 2e-4
 WEIGHT_DECAY = 0.01
 GRADIENT_ACCUMULATION_STEPS = 2
