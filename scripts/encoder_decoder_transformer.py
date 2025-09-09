@@ -93,7 +93,7 @@ class SpeechToTextTranslationModel(nn.Module):
         super().__init__()
 
         self.config = {
-            "num_heads": num_attn_heads,
+            "num_attn_heads": num_attn_heads,
             "tgt_vocab_size": tgt_vocab_size,
             "num_encoder_layers": num_encoder_layers,
             "num_decoder_layers": num_decoder_layers,
