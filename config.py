@@ -79,7 +79,7 @@ else:
 
 # --- Sample Hyperparameters (Just initials, not all are used) ---
 BATCH_SIZE = 16
-NUM_TRAIN_EPOCHS = 3
+NUM_TRAIN_EPOCHS = 2
 LEARNING_RATE = 2e-4
 WEIGHT_DECAY = 0.01
 GRADIENT_ACCUMULATION_STEPS = 2
@@ -103,5 +103,5 @@ USE_SUBSET = DATASET_PARAMS.use_subset
 SUBSET_FRACTION = DATASET_PARAMS.subset_fraction
 SUBSET_SIZE = DATASET_PARAMS.subset_size
 RANDOM_SEED = DATASET_PARAMS.random_seed
-SLIPT_METHOD = DATASET_PARAMS.split_method
+SPLIT_METHOD = DATASET_PARAMS.split_method
 
