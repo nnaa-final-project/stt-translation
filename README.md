@@ -44,9 +44,10 @@ Main Contributions Example:
 ## Usage
 
 ```bash
-python scripts/train.py      # Train the model
-python scripts/evaluate.py   # Evaluate the model
-python scripts/predict.py    # Inference on new inputs
+python main.py --mode preprocess # Preprocess the data, only needed if the existing preprocessed data is not used
+python main.py --mode train      # Train the model, set training subset to use in config.py (e.g., `subset_fraction: float = 0.01`, for 1% of the data)
+python main.py --mode evaluate    # Evaluate the model
+python main.py --mode infer     # Inference on new audio inputs
 ```
 
 ## Branching Strategy
