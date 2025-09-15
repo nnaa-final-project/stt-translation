@@ -41,6 +41,12 @@ Main Contributions Example:
 > This table will be updated continuously as the project progresses.  
 > Each member contributes via feature branches and pull requests.
 
+## Config
+### Setting environment variables to the data directory
+```
+setx COMMON_VOICE_BASE_PREPROCESSED_DATA_DIR "path/to/data"        # Windows "path/to/data" should be replaced with the actual path in your device
+export COMMON_VOICE_BASE_PREPROCESSED_DATA_DIR="path/to/data"      # macOS/Linux
+```
 ## Usage
 
 ```bash
