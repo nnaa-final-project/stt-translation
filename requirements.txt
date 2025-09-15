@@ -12,7 +12,9 @@ datasets
 accelerate
 tokenizers
 huggingface_hub
-seafetensors
+safetensors
+
+evaluate
 
 # General utilities
 tqdm # For progress bars during training
@@ -22,6 +24,8 @@ scikit-learn # For evaluation metrics
 # Additional tools
 sentencepiece # Used by some tokenizers
 bitsandbytes # For 8-bit quantization to run larger models
+librosa # For audio processing
+soundfile # For reading and writing sound files
 
 
 
