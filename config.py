@@ -9,7 +9,7 @@ from pathlib import Path
 COMMON_VOICE_BASE_DATA_DIR = Path(os.getenv("COMMON_VOICE_BASE_PREPROCESSED_DATA_DIR")).expanduser()
 COVOST_TSV_PATH = COMMON_VOICE_BASE_DATA_DIR / "covost_v2.en_de.tsv"
 OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR # / "processed_output"
-FEATURES_DIR = OUTPUT_DIR / "features"
+FEATURES_DIR = OUTPUT_DIR / "processed/features"
 
 
 # --- Parameters from data_processor.py by @sygrace---
@@ -45,7 +45,7 @@ class TextParams:
 class DatasetParams:
     """Parameters for dataset loading and splitting."""
     use_subset: bool = True
-    subset_fraction: float = 0.01  # Use 1% of training data
+    subset_fraction: float = 1 # Use 100% of training data, 0.01 = 1% of training data, 0.1 = 10% of training data
     subset_size: int = None  # Another way to do it is to specify exact train subset size
     random_seed: int = 42
     split_method: str = "random"  # "random", "first_n", or "stratified"
@@ -79,7 +79,7 @@ else:
 
 # --- Sample Hyperparameters (Just initials, not all are used) ---
 BATCH_SIZE = 16
-NUM_TRAIN_EPOCHS = 1
+NUM_TRAIN_EPOCHS = 5
 LEARNING_RATE = 2e-4
 WEIGHT_DECAY = 0.01
 GRADIENT_ACCUMULATION_STEPS = 2

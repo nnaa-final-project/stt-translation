@@ -4,7 +4,7 @@ from pathlib import Path
 import config
 from scripts.data_manager import run_preprocessing
 from scripts.trainer import TrainingManager
-from playground.inference_engine import InferenceEngine
+from scripts.inference import InferenceEngine
 
 
 def find_best_checkpoint(output_dir: Path) -> Path:
@@ -49,9 +49,6 @@ def main():
         training_manager.train()
         print("========= Training Mode Done! =========")
 
-    elif args.mode == "infer":
-        # Inference Mode should be added here
-        pass
 
 
 if __name__ == "__main__":
