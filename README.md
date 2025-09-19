@@ -3,7 +3,7 @@ Final project for NNAA: a sequence-to-sequence speech-to-text translation model 
 
 ## Folder Structure
 - `data/`: Preprocessed data and download scripts
-- `models/`: Model components like encoder, decoder, and attention
+- `models/`: Model and artifacts generated during training
 - `scripts/`: Python scripts for training, evaluation, and inference
 - `notebooks/`: Jupyter notebooks for experimentation and debugging
 - `utils/`: Utility functions for data loading, metrics, etc.
@@ -34,9 +34,10 @@ pip install -r requirements.txt
 | Nandita    | @       |    |
 
 Main Contributions Example:
-- Encoder module, training loop (scripts/train.py)
+- Training loop (scripts/trainer.py)
+- Data Loader (scripts/data_loader.py)
 - Data preprocessing, evaluation (data/, scripts/)
-- Decoder module with attention (models/decoder.py)
+- Encoder-Decoder module with attention (models/encoder_decoder_transformer.py)
 
 > This table will be updated continuously as the project progresses.  
 > Each member contributes via feature branches and pull requests.
