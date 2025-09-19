@@ -4,6 +4,7 @@ from transformers import Trainer, TrainingArguments, AutoConfig
 import evaluate
 import json
 import os
+import time
 import sentencepiece as spm
 
 import config
@@ -70,7 +71,7 @@ class TrainingManager:
 
         # Manually save the custom model config
         config.TRAINING_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        with open(config.TRAINING_OUTPUT_DIR / f"config_{datetime.now()}.json", "w") as f:
+        with open(config.TRAINING_OUTPUT_DIR / f"config_{int(time.time())}.json", "w") as f:
             json.dump(self.model.config, f)
 
         print("======= Training =======")
