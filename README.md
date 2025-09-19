@@ -3,7 +3,7 @@ Final project for NNAA: a sequence-to-sequence speech-to-text translation model 
 
 ## Folder Structure
 - `data/`: Preprocessed data and download scripts
-- `models/`: Model components like encoder, decoder, and attention
+- `models/`: Model and artifacts generated during training
 - `scripts/`: Python scripts for training, evaluation, and inference
 - `notebooks/`: Jupyter notebooks for experimentation and debugging
 - `utils/`: Utility functions for data loading, metrics, etc.
@@ -34,19 +34,27 @@ pip install -r requirements.txt
 | Nandita    | @       |    |
 
 Main Contributions Example:
-- Encoder module, training loop (scripts/train.py)
+- Training loop (scripts/trainer.py)
+- Data Loader (scripts/data_loader.py)
 - Data preprocessing, evaluation (data/, scripts/)
-- Decoder module with attention (models/decoder.py)
+- Encoder-Decoder module with attention (models/encoder_decoder_transformer.py)
 
 > This table will be updated continuously as the project progresses.  
 > Each member contributes via feature branches and pull requests.
 
+## Config
+### Setting environment variables to the data directory
+```
+setx COMMON_VOICE_BASE_PREPROCESSED_DATA_DIR "path/to/data"        # Windows "path/to/data" should be replaced with the actual path in your device
+export COMMON_VOICE_BASE_PREPROCESSED_DATA_DIR="path/to/data"      # macOS/Linux
+```
 ## Usage
 
 ```bash
-python scripts/train.py      # Train the model
-python scripts/evaluate.py   # Evaluate the model
-python scripts/predict.py    # Inference on new inputs
+python main.py --mode preprocess # Preprocess the data, only needed if the existing preprocessed data is not used
+python main.py --mode train      # Train the model, set training subset to use in config.py (e.g., `subset_fraction: float = 0.01`, for 1% of the data)
+python main.py --mode evaluate    # Evaluate the model
+python main.py --mode infer     # Inference on new audio inputs
 ```
 
 ## Branching Strategy
