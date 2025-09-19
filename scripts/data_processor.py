@@ -99,10 +99,10 @@ class AudioProcessor:
         self.seed_manifest_csv = self.P.base / "manifest_seed.csv"
         self.split_map_csv = self.P.base / "split_map.csv"
         self.tiny_dev_csv = self.P.base / "tiny_dev.csv"
-        self.features_dir = self.P.base / "data" / "processed" / "features" / "logmel"
+        self.features_dir = self.P.base / "processed" / "features" / "logmel"
         self.manifest_features_csv = self.P.base / "manifest_features.csv"
         self.cmvn_json = self.P.base / "cmvn_train.json"
-        self.wav_dir = self.P.base / "data" / "processed" / "wav"
+        self.wav_dir = self.P.base / "processed" / "wav"
         _ensure(self.features_dir)
         _ensure(self.wav_dir)
 
