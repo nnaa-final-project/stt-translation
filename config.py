@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 
-# --- Paths Configuration (USER MUST SET THESE) ---
+# --- Paths Configuration (DEV MUST SET THE BASE PATH AS ENV VAR ON THEIR MACHINE) ---
 COMMON_VOICE_BASE_DATA_DIR = Path(os.getenv("COMMON_VOICE_BASE_PREPROCESSED_DATA_DIR")).expanduser()
 COVOST_TSV_PATH = COMMON_VOICE_BASE_DATA_DIR / "covost_v2.en_de.tsv"
-OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR # / "processed_output", using base dir because output of offline preprocessor is saved there
+OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR # / "processed_output"
 FEATURES_DIR = OUTPUT_DIR / "features"
 
 
@@ -68,7 +68,7 @@ DROPOUT = 0.1
 
 
 # --- Training Config ---
-TRAINING_OUTPUT_DIR = OUTPUT_DIR / "training_results"
+TRAINING_OUTPUT_DIR = Path("./models")  # OUTPUT_DIR / "training_results"
 
 if torch.cuda.is_available():
     DEVICE = "cuda"
@@ -79,7 +79,7 @@ else:
 
 # --- Sample Hyperparameters (Just initials, not all are used) ---
 BATCH_SIZE = 16
-NUM_TRAIN_EPOCHS = 2
+NUM_TRAIN_EPOCHS = 1
 LEARNING_RATE = 2e-4
 WEIGHT_DECAY = 0.01
 GRADIENT_ACCUMULATION_STEPS = 2
