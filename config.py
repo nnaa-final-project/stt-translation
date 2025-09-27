@@ -8,8 +8,9 @@ from pathlib import Path
 # --- Paths Configuration (DEV MUST SET THE BASE PATH AS ENV VAR ON THEIR MACHINE) ---
 COMMON_VOICE_BASE_DATA_DIR = Path(os.getenv("COMMON_VOICE_BASE_PREPROCESSED_DATA_DIR")).expanduser()
 COVOST_TSV_PATH = COMMON_VOICE_BASE_DATA_DIR / "covost_v2.en_de.tsv"
-OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR # / "processed_output"
-FEATURES_DIR = OUTPUT_DIR / "processed/features"
+OUTPUT_DIR = COMMON_VOICE_BASE_DATA_DIR
+PROCESSED_DATA_DIR = OUTPUT_DIR / "processed"
+FEATURES_DIR = PROCESSED_DATA_DIR / "features"
 
 
 # --- Parameters from data_processor.py by @sygrace---
@@ -44,18 +45,18 @@ class TextParams:
 @dataclass
 class DatasetParams:
     """Parameters for dataset loading and splitting."""
-    use_subset: bool = True
+    use_subset: bool = False
     subset_fraction: float = 1 # Use 100% of training data, 0.01 = 1% of training data, 0.1 = 10% of training data
     subset_size: int = None  # Another way to do it is to specify exact train subset size
     random_seed: int = 42
-    split_method: str = "random"  # "random", "first_n", or "stratified"
+    split_method: str = "first_n"  # "random", or "stratified"
 
     # split train data into train/val if needed
     create_val_split: bool = False
     val_split_ratio: float = 0.1  # 10% for validation
 
     # For subsets reproducibility
-    shuffle_before_split: bool = True
+    shuffle_before_split: bool = False
 
 
 # --- Model Config ---
@@ -97,6 +98,8 @@ GREATER_IS_BETTER = True
 
 # --- Dataset Config ---
 DATASET_PARAMS = DatasetParams()
+CHUNK_SIZE_GB = 4  # Maximum memory per chunk in GB
+
 
 # Quick access variables for backward compatibility
 USE_SUBSET = DATASET_PARAMS.use_subset
