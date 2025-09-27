@@ -15,6 +15,7 @@ huggingface_hub
 safetensors
 
 evaluate
+sacrebleu
 
 # General utilities
 tqdm # For progress bars during training
