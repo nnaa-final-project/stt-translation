@@ -73,7 +73,7 @@ class DecoderLayer(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, embed_dim, dropout, max_len=5000):
+    def __init__(self, embed_dim, dropout, max_len=12000):
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
         pe = torch.zeros(1, max_len, embed_dim)
