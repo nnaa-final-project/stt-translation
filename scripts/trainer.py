@@ -6,6 +6,7 @@ import os
 import time
 import sentencepiece as spm
 from datasets import Dataset
+import torch.nn.utils as nn_utils
 
 import config
 
@@ -68,10 +69,9 @@ class TrainingManager:
             eval_strategy=config.EVAL_STRATEGY,
             num_train_epochs=config.NUM_TRAIN_EPOCHS,
             fp16=config.FP16,  # Use float16 for memory efficiency (requires MPS/GPU)
-            #bf16=True,  # Use bfloat16 if supported (MPS on Apple Silicon)
             learning_rate=config.LEARNING_RATE,
             weight_decay=config.WEIGHT_DECAY,
-            warmup_steps=config.WARMUP_STEPS,
+            warmup_ratio=config.WARMUP_RATIO,  # Use ratio instead of steps
             save_steps=config.SAVE_STEPS,
             eval_steps=config.EVAL_STEPS,
             logging_steps=config.LOGGING_STEPS,
@@ -79,12 +79,16 @@ class TrainingManager:
             load_best_model_at_end=config.LOAD_BEST_MODEL_AT_END,
             metric_for_best_model=config.METRIC_FOR_BEST_MODEL,
             greater_is_better=config.GREATER_IS_BETTER,
+            gradient_accumulation_steps=config.GRADIENT_ACCUMULATION_STEPS,
             remove_unused_columns=False,
             label_names=["labels"],
+            max_grad_norm=config.MAX_GRAD_NORM,  # gradient clipping
             # Memory optimization settings
             # Setting workers to 0 is generally best practice for Apple Silicon MPS
             dataloader_num_workers=0,
             dataloader_pin_memory=False,
+            # bf16=True,  # Use bfloat16 if supported (MPS on Apple Silicon)
+            # warmup_steps=config.WARMUP_STEPS,
             # Use MPS device if available (PyTorch handles this via the default 'cuda' argument if MPS is active)
             # You might need to explicitly set device in Trainer constructor for older PyTorch versions.
             # torch_dtype=torch.float16 # You may set this if needed, but fp16=True usually handles it.
@@ -106,7 +110,7 @@ class TrainingManager:
 
         # Manually save the custom model config
         config.TRAINING_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-        config_filename = f"config_{int(time.time())}.json"
+        config_filename = f"config.json"
 
         # The model config should be saved using the model's built-in save or manually using dict
         # Assuming self.model.config is a dictionary or has a 'to_dict' method

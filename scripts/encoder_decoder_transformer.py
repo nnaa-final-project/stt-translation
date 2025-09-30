@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import math
+import torch.nn.functional as F
+import config
 from typing import Optional
 
 
@@ -15,7 +17,7 @@ class PositionalFF(nn.Module):
     def forward(self, x): return self.fc2(self.dropout(self.relu(self.fc1(x))))
 
 
-class MultiHeadAttention(nn.Module):
+"""class MultiHeadAttention(nn.Module):
     def __init__(self, embed_dim: int, num_heads: int, dropout: float):
         super().__init__()
         assert embed_dim % num_heads == 0
@@ -31,7 +33,112 @@ class MultiHeadAttention(nn.Module):
         if mask is not None: scores = scores.masked_fill(mask == 0, -1e9)
         attn = self.dropout(torch.softmax(scores, dim=-1))
         ctx = torch.matmul(attn, value).transpose(1, 2).contiguous().view(bs, -1, self.embed_dim)
+        return self.out_proj(ctx)"""
+
+
+class MultiHeadAttention(nn.Module):
+    def __init__(self, embed_dim: int, num_heads: int, dropout: float, max_seq_len: int = 2048):
+        super().__init__()
+        assert embed_dim % num_heads == 0
+        self.embed_dim, self.num_heads, self.head_dim = embed_dim, num_heads, embed_dim // num_heads
+        self.max_seq_len = max_seq_len
+        self.q_proj, self.k_proj, self.v_proj, self.out_proj = (nn.Linear(embed_dim, embed_dim) for _ in range(4))
+        self.dropout = nn.Dropout(dropout)
+
+    """def forward(self, query, key, value, mask=None):
+        bs, seq_len = query.shape[0], query.shape[1]
+
+        # Truncate sequences that are too long
+        if seq_len > self.max_seq_len:
+            query = query[:, :self.max_seq_len]
+            key = key[:, :self.max_seq_len]
+            value = value[:, :self.max_seq_len]
+            if mask is not None:
+                mask = mask[:, :, :self.max_seq_len, :self.max_seq_len]
+            seq_len = self.max_seq_len
+
+        query, key, value = (proj(x).view(bs, -1, self.num_heads, self.head_dim).transpose(1, 2) for proj, x in
+                             [(self.q_proj, query), (self.k_proj, key), (self.v_proj, value)])
+
+        # Use chunked attention for large sequences
+        if seq_len > 1024:
+            return self._chunked_attention(query, key, value, mask)
+
+        scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, -1e9)
+        attn = self.dropout(torch.softmax(scores, dim=-1))
+        ctx = torch.matmul(attn, value).transpose(1, 2).contiguous().view(bs, -1, self.embed_dim)
+        return self.out_proj(ctx)"""
+
+    """def _chunked_attention(self, query, key, value, mask, chunk_size=512):
+        bs, num_heads, seq_len, head_dim = query.shape
+        output = torch.zeros_like(query)
+
+        for i in range(0, seq_len, chunk_size):
+            end_i = min(i + chunk_size, seq_len)
+            q_chunk = query[:, :, i:end_i]
+
+            scores = torch.matmul(q_chunk, key.transpose(-2, -1)) / math.sqrt(self.head_dim)
+            if mask is not None:
+                mask_chunk = mask[:, :, i:end_i, :]
+                scores = scores.masked_fill(mask_chunk == 0, -1e9)
+
+            attn = self.dropout(torch.softmax(scores, dim=-1))
+            output[:, :, i:end_i] = torch.matmul(attn, value)
+
+        return output.transpose(1, 2).contiguous().view(bs, -1, self.embed_dim)"""
+
+    def forward(self, query, key, value, mask=None):
+        bs, seq_len = query.shape[0], query.shape[1]
+
+        # Truncate sequences that are too long
+        if seq_len > self.max_seq_len:
+            query = query[:, :self.max_seq_len]
+            key = key[:, :self.max_seq_len]
+            value = value[:, :self.max_seq_len]
+            seq_len = self.max_seq_len
+            # Update mask to match truncated sequence
+            if mask is not None:
+                mask = mask[:, :, :self.max_seq_len, :self.max_seq_len]
+
+        query, key, value = (proj(x).view(bs, -1, self.num_heads, self.head_dim).transpose(1, 2) for proj, x in
+                             [(self.q_proj, query), (self.k_proj, key), (self.v_proj, value)])
+
+        # Use chunked attention for large sequences
+        if seq_len > 1024:
+            return self._chunked_attention(query, key, value, mask)
+
+        scores = torch.matmul(query, key.transpose(-2, -1)) / math.sqrt(self.head_dim)
+        if mask is not None:
+            scores = scores.masked_fill(mask == 0, -1e9)
+        attn = self.dropout(torch.softmax(scores, dim=-1))
+        ctx = torch.matmul(attn, value).transpose(1, 2).contiguous().view(bs, -1, self.embed_dim)
         return self.out_proj(ctx)
+
+
+    def _chunked_attention(self, query, key, value, mask, chunk_size=512):
+        bs, num_heads, seq_len, head_dim = query.shape
+        output = torch.zeros_like(query)
+
+        for i in range(0, seq_len, chunk_size):
+            end_i = min(i + chunk_size, seq_len)
+            q_chunk = query[:, :, i:end_i]
+
+            scores = torch.matmul(q_chunk, key.transpose(-2, -1)) / math.sqrt(self.head_dim)
+            if mask is not None:
+                # Fix: Handle mask dimension mismatch
+                if mask.shape[-1] != seq_len:
+                    # Truncate mask to match actual sequence length
+                    mask = mask[:, :, :seq_len, :seq_len]
+                mask_chunk = mask[:, :, i:end_i, :]
+                scores = scores.masked_fill(mask_chunk == 0, -1e9)
+
+            attn = self.dropout(torch.softmax(scores, dim=-1))
+            output[:, :, i:end_i] = torch.matmul(attn, value)
+
+        return output.transpose(1, 2).contiguous().view(bs, -1, self.embed_dim)
+
 
 
 class EncoderLayer(nn.Module):
@@ -62,9 +169,32 @@ class DecoderLayer(nn.Module):
         self.feed_forward = PositionalFF(embed_dim, d_ff, dropout)
         self.dropout =  nn.Dropout(dropout)
 
-    def forward(self, tgt, mem, tgt_mask, mem_mask):
+    """def forward(self, tgt, mem, tgt_mask, mem_mask):
         norm_tgt = self.norm1(tgt)
         tgt = tgt + self.dropout(self.self_attn(norm_tgt, norm_tgt, norm_tgt, tgt_mask))
+        norm_tgt = self.norm2(tgt)
+        tgt = tgt + self.dropout(self.cross_attn(norm_tgt, mem, mem, mem_mask))
+        norm_tgt = self.norm3(tgt)
+        tgt = tgt + self.dropout(self.feed_forward(norm_tgt))
+        return tgt"""
+
+
+    def forward(self, tgt, mem, tgt_mask, mem_mask):
+        norm_tgt = self.norm1(tgt)
+
+        # Handle mask dimension for self-attention
+        if tgt_mask is not None and tgt_mask.dim() == 4:
+            # If mask has batch and head dimensions, use it as is
+            self_attn_mask = tgt_mask
+        elif tgt_mask is not None:
+            # Expand mask to match attention head dimensions
+            batch_size = tgt.shape[0]
+            num_heads = self.self_attn.num_heads
+            self_attn_mask = tgt_mask.unsqueeze(0).expand(batch_size, num_heads, -1, -1)
+        else:
+            self_attn_mask = None
+
+        tgt = tgt + self.dropout(self.self_attn(norm_tgt, norm_tgt, norm_tgt, self_attn_mask))
         norm_tgt = self.norm2(tgt)
         tgt = tgt + self.dropout(self.cross_attn(norm_tgt, mem, mem, mem_mask))
         norm_tgt = self.norm3(tgt)
@@ -73,9 +203,10 @@ class DecoderLayer(nn.Module):
 
 
 class PositionalEncoding(nn.Module):
-    def __init__(self, embed_dim, dropout, max_len=12000):
+    def __init__(self, embed_dim, dropout, max_len=2048):  # Reduced from 12000
         super().__init__()
         self.dropout = nn.Dropout(p=dropout)
+        self.max_len = max_len
         pe = torch.zeros(1, max_len, embed_dim)
         pos, div = torch.arange(max_len).unsqueeze(1), torch.exp(
             torch.arange(0, embed_dim, 2) * (-math.log(10000.0) / embed_dim))
@@ -83,7 +214,9 @@ class PositionalEncoding(nn.Module):
         self.register_buffer('pe', pe)
 
     def forward(self, x):
-        return self.dropout(x + self.pe[:, :x.size(1)])
+        seq_len = min(x.size(1), self.max_len)
+        return self.dropout(x[:, :seq_len] + self.pe[:, :seq_len])
+
 
 
 class SpeechToTextTranslationModel(nn.Module):
@@ -113,7 +246,48 @@ class SpeechToTextTranslationModel(nn.Module):
             [DecoderLayer(embed_dim, num_attn_heads, d_ff, dropout) for _ in range(num_decoder_layers)])
 
         self.generator = nn.Linear(embed_dim, tgt_vocab_size)
-        self.loss_fn = nn.CrossEntropyLoss(ignore_index=1)  # Assume pad token index is 1
+
+        self.pad_token_id = 0
+        self.loss_fn = nn.CrossEntropyLoss(ignore_index=self.pad_token_id, label_smoothing=config.LABEL_SMOOTHING)
+
+    def _create_causal_mask(self, seq_len, device):
+        """Create causal mask for decoder self-attention."""
+        mask = torch.triu(torch.ones(seq_len, seq_len, device=device), diagonal=1)
+        return mask == 0  # True for allowed positions
+
+    def _truncate_sequences(self, input_features, labels=None, max_audio_len=1024, max_text_len=256):
+        """Truncate sequences to manageable lengths."""
+        # Truncate audio features
+        if input_features.shape[1] > max_audio_len:
+            input_features = input_features[:, :max_audio_len]
+
+        # Truncate labels if provided
+        if labels is not None and labels.shape[1] > max_text_len:
+            labels = labels[:, :max_text_len]
+
+        return input_features, labels
+
+    def compute_masked_loss(self, logits, labels):
+        """Compute loss with proper masking for padding tokens."""
+        # Create mask for non-padding tokens
+        mask = (labels != self.pad_token_id).float()
+
+        # Flatten tensors properly using contiguous()
+        logits_flat = logits.contiguous().view(-1, logits.shape[-1])
+        labels_flat = labels.contiguous().view(-1)
+        mask_flat = mask.contiguous().view(-1)
+
+        # Compute loss
+        loss = F.cross_entropy(
+            logits_flat,
+            labels_flat,
+            reduction='none',
+            label_smoothing=0.1
+        )
+
+        # Apply mask and compute average
+        masked_loss = loss * mask_flat
+        return masked_loss.sum() / (mask_flat.sum() + 1e-8)
 
     def _make_pad_lookahead_target_mask(self, target, device):
         target_len = target.shape[1]
@@ -122,6 +296,48 @@ class SpeechToTextTranslationModel(nn.Module):
         return target_pad_mask & ~target_lookahead_mask
 
     def forward(self, input_features, labels=None, **kwargs):
+        # Truncate sequences to prevent memory issues
+        input_features, labels = self._truncate_sequences(input_features, labels)
+
+        # Project and encode input features
+        src = self.feature_projection(input_features) * math.sqrt(self.config["embed_dim"])
+        src = self.pos_encoder(src)
+
+        # Pass through encoder
+        memory = src
+        for layer in self.encoder_stack:
+            memory = layer(memory, None)
+
+        if labels is not None:
+            # Create proper causal mask for decoder
+            seq_len = labels.shape[1]
+            tgt_mask = self._create_causal_mask(seq_len, labels.device)
+
+            # Also create padding mask
+            pad_mask = self._make_pad_lookahead_target_mask(labels, labels.device)
+
+            # Combine causal and padding masks
+            combined_mask = tgt_mask.unsqueeze(0).unsqueeze(0) & pad_mask
+
+            # Embed and encode target sequence
+            tgt_emb = self.tgt_embedding(labels) * math.sqrt(self.config["embed_dim"])
+            tgt_emb = self.pos_encoder(tgt_emb)
+
+            # Pass through decoder with proper masking
+            dec_output = tgt_emb
+            for layer in self.decoder_stack:
+                dec_output = layer(dec_output, memory, combined_mask, None)
+
+            # Generate logits
+            logits = self.generator(dec_output)
+
+            # Compute masked loss
+            loss = self.compute_masked_loss(logits, labels)
+            return {"logits": logits, "loss": loss}
+
+        return {"encoder_out": memory}
+
+    """def forward(self, input_features, labels=None, **kwargs):
         src = self.feature_projection(input_features) * math.sqrt(self.config["embed_dim"])
         src = self.pos_encoder(src)
 
@@ -130,6 +346,11 @@ class SpeechToTextTranslationModel(nn.Module):
             memory = layer(memory, None)
 
         if labels is not None:
+            # Truncate labels if they are longer than the max length supported by positional encoding
+            max_len = self.pos_encoder.max_len
+            if labels.size(1) > max_len:
+                labels = labels[:, :max_len]
+
             tgt_mask = self._make_pad_lookahead_target_mask(labels, labels.device)
             tgt_emb = self.tgt_embedding(labels) * math.sqrt(self.config["embed_dim"])
             tgt_emb = self.pos_encoder(tgt_emb)
@@ -137,7 +358,16 @@ class SpeechToTextTranslationModel(nn.Module):
             for layer in self.decoder_stack:
                 dec_output = layer(dec_output, memory, tgt_mask, None)
             logits = self.generator(dec_output)
-            loss = self.loss_fn(logits.view(-1, logits.shape[-1]), labels.view(-1))
+            
+            # >>> INSERT DEBUGGING HERE <<<
+            print(f"Logits shape: {logits.shape}")
+            print(f"Labels shape: {labels.shape}")
+            print(f"Logits total tokens (N): {logits.view(-1, logits.shape[-1]).shape[0]}")
+            print(f"Labels total tokens (N): {labels.view(-1).shape[0]}")
+            # >>> END DEBUGGING <<<
+
+            loss = self.loss_fn(logits.view(-1, logits.shape[-1]), labels.reshape(-1))
             return {"logits": logits, "loss": loss}
 
-        return {"encoder_out": memory}
+        return {"encoder_out": memory}"""
+

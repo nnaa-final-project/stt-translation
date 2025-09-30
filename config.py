@@ -45,27 +45,32 @@ class TextParams:
 @dataclass
 class DatasetParams:
     """Parameters for dataset loading and splitting."""
-    use_subset: bool = False
+    use_subset: bool = True
     subset_fraction: float = 1 # Use 100% of training data, 0.01 = 1% of training data, 0.1 = 10% of training data
     subset_size: int = None  # Another way to do it is to specify exact train subset size
     random_seed: int = 42
-    split_method: str = "first_n"  # "random", or "stratified"
+    split_method: str = "random" #"first_n", "random", or "stratified"
 
     # split train data into train/val if needed
     create_val_split: bool = False
     val_split_ratio: float = 0.1  # 10% for validation
 
     # For subsets reproducibility
-    shuffle_before_split: bool = False
+    shuffle_before_split: bool = True
 
 
 # --- Model Config ---
 EMBED_DIM = 256
-NUM_HEADS = 8
-NUM_ENCODER_LAYERS = 4
-NUM_DECODER_LAYERS = 4
-D_FF = 1024
-DROPOUT = 0.1
+NUM_HEADS = 4 # reduced from 8 to 4 to decrease mmodel size and stability
+NUM_ENCODER_LAYERS = 3 # reduced from 4 to 3 to decrease model size and training time
+NUM_DECODER_LAYERS = 3 # reduced from 4 to 3 to decrease model size and training time
+D_FF = 512 # reduced from 1024 to 512 to decrease model size and training time
+DROPOUT = 0.2 # 0.1 increased to 0.2 to reduce overfitting
+
+# --- Sequence Length Constraints ---
+MAX_AUDIO_SEQUENCE_LENGTH = 1024  # Limit audio features
+MAX_TEXT_SEQUENCE_LENGTH = 256    # Limit text tokens
+ATTENTION_CHUNK_SIZE = 512
 
 
 # --- Training Config ---
@@ -79,26 +84,38 @@ else:
     DEVICE = "cpu"
 
 # --- Sample Hyperparameters (Just initials, not all are used) ---
-BATCH_SIZE = 16
-NUM_TRAIN_EPOCHS = 5
-LEARNING_RATE = 2e-4
+BATCH_SIZE = 1 # redudced from 4 to 1 to fit in memory
+NUM_TRAIN_EPOCHS = 10 # Increase to 10 from 5 for better results
+# LEARNING_RATE = 2e-4
 WEIGHT_DECAY = 0.01
-GRADIENT_ACCUMULATION_STEPS = 2
+GRADIENT_ACCUMULATION_STEPS = 16 # increased from 4 to simulate larger batch size
 WARMUP_STEPS = 1000
 FP16 = True if DEVICE == "cuda" else False
 EVAL_STRATEGY = "steps" # or "epoch" but must adjust save strategy
-EVAL_STEPS = 1000
-SAVE_STEPS = 1000
+EVAL_STEPS = 2000
+SAVE_STEPS = 2000
 LOGGING_STEPS = 200
 SAVE_TOTAL_LIMIT = 2
 LOAD_BEST_MODEL_AT_END = True
 METRIC_FOR_BEST_MODEL = "bleu"
 GREATER_IS_BETTER = True
 
+# Adds stability and prevents exploding gradients
+MAX_GRAD_NORM = 1.0              # gradient clipping
+LEARNING_RATE = 1e-4             # Reduced from 2e-4
+WARMUP_RATIO = 0.1
+
+
+# --- Loss and Generation Config ---
+LABEL_SMOOTHING = 0.1
+PAD_TOKEN_ID = 0                 # Padding token
+BOS_TOKEN_ID = 1                 # start of sequence token
+EOS_TOKEN_ID = 2
+
 
 # --- Dataset Config ---
 DATASET_PARAMS = DatasetParams()
-CHUNK_SIZE_GB = 4  # Maximum memory per chunk in GB
+CHUNK_SIZE_GB = 0.5  # Maximum memory per chunk in GB
 
 
 # Quick access variables for backward compatibility
