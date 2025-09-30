@@ -1,7 +1,6 @@
-# scripts/inference.py
 import math
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Tuple, Set
 
 import librosa
 import numpy as np
@@ -33,6 +32,38 @@ def wav_to_logmels(wav: np.ndarray, sr: int,
     logmel = librosa.power_to_db(mel + 1e-10, ref=1.0)
     logmel = logmel.T.astype(np.float32)  # [T, n_mels]
     return logmel
+
+
+# ---------- helpers for anti-repetition ----------
+
+def build_ngram_index(seq: List[int], n: int) -> Dict[Tuple[int, ...], Set[int]]:
+    """
+    For each (n-1)-gram prefix in seq, record which next-token ids followed it.
+    Returns: {(t_{i-n+1},...,t_{i-1}): {t_i, ...}, ...}
+    """
+    follows: Dict[Tuple[int, ...], Set[int]] = {}
+    if n <= 1 or len(seq) < n:
+        return follows
+    for i in range(n - 1, len(seq)):
+        prefix = tuple(seq[i - n + 1:i])
+        nxt = seq[i]
+        if prefix not in follows:
+            follows[prefix] = set()
+        follows[prefix].add(nxt)
+    return follows
+
+
+def apply_repetition_penalty_(logits: torch.Tensor, seq: List[int], penalty: float) -> None:
+    """
+    Simple repetition penalty: down-weight tokens already used.
+    (Not the HF exact rule, but effective and safe.)
+    """
+    if penalty <= 1.0 or not seq:
+        return
+    ids, counts = np.unique(np.asarray(seq, dtype=np.int64), return_counts=True)
+    for tid, cnt in zip(ids.tolist(), counts.tolist()):
+        # subtract a small amount scaled by how many times we've seen it
+        logits[0, tid] -= math.log(penalty) * float(cnt)
 
 
 class InferenceEngine:
@@ -84,7 +115,18 @@ class InferenceEngine:
     # ---------------------------------------------------------
 
     @torch.no_grad()
-    def translate_audio(self, audio_path: str, max_len: int = 100) -> str:
+    def translate_audio(
+        self,
+        audio_path: str,
+        max_len: int = 100,
+        no_repeat_ngram_size: int = 3,
+        repetition_penalty: float = 1.2,
+    ) -> str:
+        """
+        Greedy decoding with anti-repetition:
+          - blocks n-grams already produced (size no_repeat_ngram_size)
+          - applies a simple repetition penalty to logits
+        """
         # 1) load wav -> log-mels -> tensor [1, T, 80]
         wav, _ = librosa.load(audio_path, sr=config.AudioParams.sr_target)
         feats = wav_to_logmels(
@@ -104,13 +146,14 @@ class InferenceEngine:
             memory = layer(memory, None)  # no src mask for now
         # memory: [1, Tenc, embed_dim]
 
-        # 3) greedy decode with the model's decoder + generator
+        # 3) greedy decode with anti-repetition
         generated: List[int] = [BOS_ID]
         for _ in range(max_len):
             tgt = torch.tensor(generated, dtype=torch.long, device=self.device).unsqueeze(0)  # [1, L]
-            # causal mask + pad mask like training
             L = tgt.size(1)
-            pad_mask = (tgt != 1).unsqueeze(1).unsqueeze(2)  # pad id assumed=1
+
+            # causal mask + pad mask (NOTE: if your pad id != 1, change below)
+            pad_mask = (tgt != 1).unsqueeze(1).unsqueeze(2)  # pad id assumed=1 (kept as in your code)
             look_ahead = torch.triu(torch.ones((L, L), device=self.device), diagonal=1).bool()
             tgt_mask = pad_mask & ~look_ahead
 
@@ -122,8 +165,20 @@ class InferenceEngine:
                 dec_out = layer(dec_out, memory, tgt_mask, None)
 
             logits = self.model.generator(dec_out[:, -1, :])  # [1, vocab]
-            next_id = int(torch.argmax(logits, dim=-1).item())
 
+            # --- anti-repetition 1: no-repeat-ngrams ---
+            if no_repeat_ngram_size and no_repeat_ngram_size > 1 and len(generated) >= no_repeat_ngram_size - 1:
+                follows = build_ngram_index(generated, no_repeat_ngram_size)
+                prefix = tuple(generated[-(no_repeat_ngram_size - 1):]) if no_repeat_ngram_size > 1 else tuple()
+                banned = follows.get(prefix, set())
+                if banned:
+                    logits[0, list(banned)] = -1e9  # effectively ban
+
+            # --- anti-repetition 2: repetition penalty on already used tokens ---
+            apply_repetition_penalty_(logits, generated, repetition_penalty)
+
+            # pick next token
+            next_id = int(torch.argmax(logits, dim=-1).item())
             generated.append(next_id)
             if next_id == EOS_ID:
                 break
