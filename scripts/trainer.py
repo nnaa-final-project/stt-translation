@@ -23,13 +23,11 @@ class TrainingManager:
     def __init__(self):
         print("Initializing Training Manager with memory-efficient datasets...")
 
-        # Create chunked datasets with memory management
-        # Ensure config.CHUNK_SIZE_GB is defined in your config file (e.g., 5.0)
         self.train_dataset = PreprocessedDataset(
             split="train",
             base_output_dir=config.OUTPUT_DIR,
             subset_params=config.DATASET_PARAMS,
-            chunk_size_gb=config.CHUNK_SIZE_GB  # Use configured chunk size (e.g., 5GB)
+            chunk_size_gb=config.CHUNK_SIZE_GB  # Use configured chunk size
         )
 
         self.eval_dataset = PreprocessedDataset(
@@ -107,13 +105,9 @@ class TrainingManager:
             compute_metrics=self._metrics,
             data_collator=data_collator,
         )
-
-        # Manually save the custom model config
         config.TRAINING_OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
         config_filename = f"config.json"
 
-        # The model config should be saved using the model's built-in save or manually using dict
-        # Assuming self.model.config is a dictionary or has a 'to_dict' method
         try:
             model_config_dict = self.model.config.to_dict()
         except AttributeError:
@@ -142,14 +136,10 @@ class TrainingManager:
         pred_ids = pred.predictions.argmax(-1)
 
         if isinstance(labels_ids, np.ndarray):
-            # This handles the case where it comes as a NumPy array (the common MPS behavior)
             labels_ids = torch.from_numpy(labels_ids)
         if isinstance(pred_ids, np.ndarray):
             pred_ids = torch.from_numpy(pred_ids)
 
-
-        # Replace -100 in labels with the SentencePiece PAD ID for decoding
-        # labels_ids[labels_ids == -100] = self.sentence_piece.pad_id()
 
         labels_cpu_tensor = labels_ids.detach().cpu()
         preds_cpu_tensor = pred_ids.detach().cpu()
@@ -168,9 +158,7 @@ class TrainingManager:
         # Decode and compute BLEU score
         pred_str = self.sentence_piece.decode(preds_np.tolist())
         label_str = self.sentence_piece.decode(labels_np.tolist())
-
         bleu_metric = evaluate.load("sacrebleu")
-        # sacrebleu expects a list of reference lists
         result = bleu_metric.compute(predictions=pred_str, references=[[l] for l in label_str])
 
         return {"bleu": result["score"]}
