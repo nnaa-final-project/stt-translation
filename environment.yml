@@ -1,9 +1,9 @@
 name: stt_translation
 
-#channels:
- # - pytorch
-  #- conda-forge
-  #- defaults
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
 
 dependencies:
   - python=3.12
